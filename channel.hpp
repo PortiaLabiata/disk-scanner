@@ -40,6 +40,23 @@ public:
         return true;
     }
 
+    bool send(const T&& v)
+    {
+        {
+            std::unique_lock lock(_mtx);
+            if (_size >= S)
+            {
+                return false;
+            }
+
+            _values[_left] = std::move(v);
+            _left = (_left + 1) % S;
+            _size++;
+        }
+        _condvar.notify_all();
+        return true;
+    }
+
     T recv()
     {
         {
