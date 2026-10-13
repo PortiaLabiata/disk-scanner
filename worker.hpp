@@ -2,6 +2,7 @@
 #define WORKER_HPP
 
 #include <string>
+#include <utility>
 #include <vector>
 #include "channel.hpp"
 

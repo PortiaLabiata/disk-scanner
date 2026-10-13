@@ -23,25 +23,33 @@ int main(int argc, char **argv)
         }
     }
 
+    std::vector<prims::worker_data> output;
+    std::size_t got_values = 0;
     while (true)
     {
-        bool done = workers[0].done();
-        for (std::size_t i = 1; i < workers.size(); i++)
-        {
-            done = done & workers[i].done();
-            std::cout << workers[i].done() << std::endl;
-        }
-
-        if (done)
+        if (got_values == workers.size())
         {
             break;
         }
 
-        auto data = channel.recv(); 
-        for (const auto& entry : data)
+        for (const auto& v : channel.recv())
         {
-            std::cout << entry.filename << std::endl;
+            output.push_back(v);
         }
+        got_values++;
+    }
+
+    for (auto& thread : threads)
+    {
+        if (thread.joinable())
+        {
+            thread.join();
+        }
+    }
+
+    for (const auto& result : output)
+    {
+        std::cout << result.filename << "\t" << result.size << std::endl;
     }
 
     return 0;
