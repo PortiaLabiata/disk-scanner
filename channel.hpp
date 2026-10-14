@@ -7,6 +7,7 @@
 #include <optional>
 #include <array>
 #include <chrono>
+#include <atomic>
 
 namespace prims
 {
@@ -75,11 +76,28 @@ public:
             return v;
         }
     }
+
+    std::optional<T> drain()
+    {
+        if (_size == 0)
+            return std::nullopt;
+
+        T v = std::move(*_values[_right]);
+        _values[_right].reset();
+        _right = (_right + 1) % S;
+        _size--;
+        return v;
+    }
+
+    std::size_t size() const
+    {
+        return _size;
+    }
 private:
     std::mutex _mtx;
     std::condition_variable _condvar;
     std::array<std::optional<T>, S> _values;
-    std::size_t _left, _right, _size;
+    std::atomic<std::size_t> _left, _right, _size;
 };
 
 }

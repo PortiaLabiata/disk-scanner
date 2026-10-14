@@ -47,9 +47,13 @@ int main(int argc, char **argv)
         auto v = channel.recv(tout);
         if (v.has_value())
         {
-            std::cout << v->filename << std::endl;
             output.push_back(*v);
         }
+    }
+
+    while (channel.size() > 0)
+    {
+        output.push_back(*channel.drain());
     }
 
     for (auto& thread : threads)
