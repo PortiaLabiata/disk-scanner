@@ -1,13 +1,16 @@
+#include <chrono>
 #include <iostream>
 #include <thread>
+#include <vector>
 #include <filesystem>
 #include "channel.hpp"
 #include "worker.hpp"
 
 int main(int argc, char **argv)
 {
+    (void)argc; (void)argv;
     prims::worker::channel_type channel;
-    std::vector<prims::worker> workers;
+    std::vector<prims::worker_functor> functors;
     std::vector<std::thread> threads;
 
     std::filesystem::directory_iterator iter{".\\"};
@@ -15,28 +18,33 @@ int main(int argc, char **argv)
     {
         if (entry.is_directory())
         {
-            prims::worker worker{channel};
-            prims::worker_functor func{worker, entry.path().string()};
+            prims::worker w{channel};
+            prims::worker_functor func{std::move(w), entry.path().string()};
 
-            workers.push_back(worker); 
+            functors.emplace_back(func);
             threads.emplace_back(std::thread{func});
         }
     }
 
     std::vector<prims::worker_data> output;
-    std::size_t got_values = 0;
+    std::chrono::milliseconds tout{10};
     while (true)
     {
-        if (got_values == workers.size())
+        bool done = true;
+        for (const auto& functor: functors)
         {
-            break;
+            done = done && functor->done();
         }
 
-        for (const auto& v : channel.recv())
+        if (done)
+            break;
+
+        auto v = channel.recv(tout);
+        if (v.has_value())
         {
-            output.push_back(v);
+            std::cout << v->filename << std::endl;
+            output.push_back(*v);
         }
-        got_values++;
     }
 
     for (auto& thread : threads)

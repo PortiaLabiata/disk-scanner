@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <optional>
 #include <array>
+#include <chrono>
 
 namespace prims
 {
@@ -57,12 +58,15 @@ public:
         return true;
     }
 
-    T recv()
+    std::optional<T> recv(const std::chrono::milliseconds& dur)
     {
         {
             std::unique_lock lock(_mtx);
 
-            _condvar.wait(lock, [this] { return _size > 0; } );
+            _condvar.wait_for(lock, dur );
+
+            if (_size == 0)
+                return std::nullopt;
 
             T v = std::move(*_values[_right]);
             _values[_right].reset();
