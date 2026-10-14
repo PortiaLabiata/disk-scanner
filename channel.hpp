@@ -41,7 +41,7 @@ public:
         return true;
     }
 
-    bool send(const T&& v)
+    bool send(T&& v)
     {
         {
             std::unique_lock lock(_mtx);
@@ -63,7 +63,7 @@ public:
         {
             std::unique_lock lock(_mtx);
 
-            _condvar.wait_for(lock, dur );
+            _condvar.wait_for(lock, dur, [this]{ return _size > 0; });
 
             if (_size == 0)
                 return std::nullopt;

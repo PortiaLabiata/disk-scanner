@@ -16,14 +16,19 @@ int main(int argc, char **argv)
     std::filesystem::directory_iterator iter{".\\"};
     for (const auto& entry : iter)
     {
-        if (entry.is_directory())
+        if (entry.is_directory() && !entry.is_symlink())
         {
             prims::worker w{channel};
             prims::worker_functor func{std::move(w), entry.path().string()};
-
             functors.emplace_back(func);
-            threads.emplace_back(std::thread{func});
         }
+    }
+
+    // Launch threads later to avoid dangling references
+    // due to vector reallocations
+    for (auto f : functors)
+    {
+        threads.emplace_back(f);
     }
 
     std::vector<prims::worker_data> output;

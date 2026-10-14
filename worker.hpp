@@ -1,6 +1,7 @@
 #ifndef WORKER_HPP
 #define WORKER_HPP
 
+#include <memory>
 #include <string>
 #include <atomic>
 #include "channel.hpp"
@@ -33,19 +34,23 @@ private:
 class worker_functor {
 public:
     worker_functor(worker&& w, std::string root) 
-        : _worker(w), _root(root) {}
+        : _worker(std::make_shared<worker>(std::move(w))), _root(std::move(root)) {}
+
+    worker_functor(const worker_functor& other)
+        : _worker(other._worker),
+          _root(other._root) {}
 
     void operator()() 
     {
-        _worker.run(_root);
+        _worker->run(_root);
     }
 
     const worker *operator->() const
     {
-        return &_worker;
+        return _worker.get();
     }
 private:
-    worker _worker;
+    std::shared_ptr<worker> _worker;
     std::string _root;
 };
 
