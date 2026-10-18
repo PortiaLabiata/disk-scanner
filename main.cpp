@@ -5,10 +5,14 @@
 #include <filesystem>
 #include "channel.hpp"
 #include "worker.hpp"
+#include "gui.hpp"
+#include "tree.hpp"
 
 int main(int argc, char **argv)
 {
     (void)argc; (void)argv;
+    prims::node<std::string> tree;
+
     prims::worker::channel_type channel;
     std::vector<prims::worker_functor> functors;
     std::vector<std::thread> threads;
